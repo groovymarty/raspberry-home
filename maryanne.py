@@ -12,14 +12,19 @@ mcp = MCP23017(i2c)
 
 pins = []
 oncount = []
+ontime = []
 filt = []
 for i in range(0, 16):
     pin = mcp.get_pin(i)
     pin.direction = digitalio.Direction.INPUT
-    pin.pull = digitalio.Pull.UP
+    # no pull up, the opto isolator boards have PNP outputs
     pins.append(pin)
     oncount.append(0)
+    ontime.append(0)
     filt.append(False)
+    
+#print("iodir={0}", mcp.iodir)
+#print("gppu={0}", mcp.gppu)
 
 names = [
     "HEAT WH",
@@ -52,15 +57,15 @@ while True:
     for i in range(0, 16):
         if raw[i]:
             oncount[i] = min(oncount[i] + 2, 20)
-            if oncount[i] == 2:
-                printCounts()
         else:
             oncount[i] = max(oncount[i] - 1, 0)
         if filt[i]:
             if oncount[i] == 0:
                 filt[i] = False
-                print("{0}: {1} is OFF".format(str(now), names[i]))
+                duration = now - ontime[i]
+                print("{0}: {1} is OFF, duration = {2}".format(str(now), names[i], str(duration)))
         else:
             if oncount[i] > 10:
                 filt[i] = True
                 print("{0}: {1} is ON".format(str(now), names[i]))
+                ontime[i] = now
