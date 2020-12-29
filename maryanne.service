@@ -1,0 +1,11 @@
+[Unit]
+Description=Run MaryAnne home telemetry software
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/raspberry-home
+ExecStart=/home/pi/raspberry-home/maryanne.sh
+
+[Install]
+WantedBy=multi-user.target
