@@ -1,2 +1,2 @@
 #!/bin/bash
-python maryanne.py
+python3 maryanne.py

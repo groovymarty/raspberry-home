@@ -3,6 +3,7 @@ import datetime
 import board
 import busio
 import digitalio
+import requests
 
 from adafruit_mcp230xx.mcp23017 import MCP23017
 
@@ -21,7 +22,7 @@ for i in range(0, 16):
     pins.append(pin)
     oncount.append(0)
     ontime.append(0)
-    filt.append(False)
+    filt.append(0)
     
 #print("iodir={0}", mcp.iodir)
 #print("gppu={0}", mcp.gppu)
@@ -50,22 +51,36 @@ def printCounts():
         s = s + "{0} ".format(oncount[i])
     print(s)
 
+print("Hello from MaryAnne", flush=True)
 while True:
     time.sleep(0.02)
     now = datetime.datetime.now()
     raw = list(map(lambda pin: pin.value, pins))
+    change = False
     for i in range(0, 16):
         if raw[i]:
             oncount[i] = min(oncount[i] + 2, 20)
         else:
             oncount[i] = max(oncount[i] - 1, 0)
-        if filt[i]:
+        if filt[i] != 0:
             if oncount[i] == 0:
-                filt[i] = False
+                filt[i] = 0
+                change = True
                 duration = now - ontime[i]
-                print("{0}: {1} is OFF, duration = {2}".format(str(now), names[i], str(duration)))
+                print("{0}: {1} is OFF, duration = {2}".format(str(now), names[i], str(duration)),
+                      flush=True)
         else:
             if oncount[i] > 10:
-                filt[i] = True
-                print("{0}: {1} is ON".format(str(now), names[i]))
+                filt[i] = 1 << i
+                change = True
+                print("{0}: {1} is ON".format(str(now), names[i]),
+                      flush=True)
                 ontime[i] = now
+    if change:
+        inp = sum(filt)
+        r = requests.post("https://groovymarty.com/gvyhome/data",
+                         json = {"t": str(now),
+                                 "src": "ma1",
+                                 "inp": inp})
+        if r.status_code != 200:
+            print("post status code is {0}".format(r.status_code), flush=True)
