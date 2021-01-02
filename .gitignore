@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Using PyCharm as editor only so don't need to save project
+.idea/
