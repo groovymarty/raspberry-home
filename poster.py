@@ -78,11 +78,16 @@ def posterMain():
             # post to server
             # uncomment the if clause for testing, forces 404 error unless 3 or more records are ready to post
             url = postURL   # if len(postRecs) > 2 else postURL + "xxx"
-            # note this is a synchronous call, so thread will block until post succeeds or fails
-            r = requests.post(url, json=postRecs)
-            if r.status_code != 200:
+            status = 0
+            try:
+                # note this is a synchronous call, so thread will block until post succeeds or fails
+                r = requests.post(url, json=postRecs)
+                status = r.status_code
+            except Exception:
+                pass
+            if status != 200:
                 # post failed
-                print("post status code is {0}".format(r.status_code), flush=True)
+                print("post status code is {0}".format(status), flush=True)
                 # put records back on waiting list
                 waitQ.extend(postRecs)
                 # write all waiting records to backlog file
@@ -91,6 +96,7 @@ def posterMain():
                 # try again in next loop, usually 5 seconds
             else:
                 # successful post
+                #print("post successful", flush=True)
                 # update or delete backlog file
                 if waitQ:
                     writeBacklog()
