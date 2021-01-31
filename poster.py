@@ -36,7 +36,7 @@ def setNetTrouble(newVal):
     if netTrouble != newVal:
         netTrouble = newVal
         if myNetSrc:
-            addRecord({"t": str(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
+            addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
 
 # read backlog file
 def readBacklog():

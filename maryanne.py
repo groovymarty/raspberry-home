@@ -70,7 +70,7 @@ print("Hello from MaryAnne", flush=True)
 # set source name for network trouble reports
 poster.setNetSrc("ma1.net");
 # post boot record
-poster.addRecord({"t": str(thyme.now()), "src": "boot", "who": "ma1"})
+poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "boot", "who": "ma1"})
 
 while True:
     time.sleep(0.02)
@@ -112,4 +112,4 @@ while True:
         # since we represent on with power of 2, we can just add up the filt array to get binary input value
         inp = sum(filt)
         # post record with current data
-        poster.addRecord({"t": str(now), "src": "ma1", "inp": inp})
+        poster.addRecord({"t": thyme.toStr(now), "src": "ma1", "inp": inp})

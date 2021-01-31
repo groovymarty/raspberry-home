@@ -6,3 +6,8 @@ import datetime
 # in other words, -5 hours from UTC
 def now():
     return datetime.datetime.now(datetime.timezone(-datetime.timedelta(hours=5)))
+
+# convert time to string
+# format is yyyy-mm-dd hh:mm:ss.fff
+def toStr(t):
+    str(t)[0:23]
