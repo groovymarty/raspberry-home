@@ -27,10 +27,12 @@ def addRecord(rec):
     
 # set my source name for network trouble reports
 def setNetSrc(src):
+    global myNetSrc
     myNetSrc = src
 
 # update network trouble status
-def setNetworkTrouble(newVal):
+def setNetTrouble(newVal):
+    global netTrouble
     if netTrouble != newVal:
         netTrouble = newVal
         if myNetSrc:
