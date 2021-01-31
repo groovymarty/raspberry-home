@@ -10,4 +10,4 @@ def now():
 # convert time to string
 # format is yyyy-mm-dd hh:mm:ss.fff
 def toStr(t):
-    str(t)[0:23]
+    return str(t)[0:23]
