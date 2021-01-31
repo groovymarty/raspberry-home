@@ -6,11 +6,11 @@
 # http://www.icstation.com/channel-optocoupler-isolator-photoelectric-isolation-module-level-voltage-converter-8bit-output-signal-converter-p-14096.html
 
 import time
-import datetime
 import board
 import busio
 import digitalio
 import poster
+import thyme
 
 from adafruit_mcp230xx.mcp23017 import MCP23017
 
@@ -67,9 +67,14 @@ def printCounts():
 
 # main loop
 print("Hello from MaryAnne", flush=True)
+# set source name for network trouble reports
+poster.setNetSrc("ma1.net");
+# post boot record
+poster.addRecord({"t": str(thyme.now()), "src": "boot", "who": "ma1"})
+
 while True:
     time.sleep(0.02)
-    now = datetime.datetime.now()
+    now = thyme.now()
     # read inputs
     raw = list(map(lambda pin: pin.value, pins))
     change = False

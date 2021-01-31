@@ -6,6 +6,7 @@ from collections import deque
 import requests
 import json
 import os
+import thyme
 
 # input queue, newly arrived records
 inQ = queue.Queue()
@@ -15,10 +16,25 @@ waitQ = deque()
 backlogPath = "backlog"
 # backend server URL
 postURL = "https://groovymarty.com/gvyhome/data"
+# network trouble?
+netTrouble = False
+# my source name for network trouble reports
+myNetSrc = ""
 
 # add a record to be posted
 def addRecord(rec):
     inQ.put(rec)
+    
+# set my source name for network trouble reports
+def setNetSrc(src):
+    myNetSrc = src
+
+# update network trouble status
+def setNetworkTrouble(newVal):
+    if netTrouble != newVal:
+        netTrouble = newVal
+        if myNetSrc:
+            addRecord({"t": str(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
 
 # read backlog file
 def readBacklog():
@@ -87,6 +103,7 @@ def posterMain():
                 pass
             if status != 200:
                 # post failed
+                setNetTrouble(True)
                 print("post status code is {0}".format(status), flush=True)
                 # put records back on waiting list
                 waitQ.extend(postRecs)
@@ -96,6 +113,7 @@ def posterMain():
                 # try again in next loop, usually 5 seconds
             else:
                 # successful post
+                setNetTrouble(False)
                 #print("post successful", flush=True)
                 # update or delete backlog file
                 if waitQ:
