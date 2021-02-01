@@ -21,18 +21,22 @@ def send_test_record():
     global pattern
     pattern += 1
     fish.buzzer.beep(.05,0,1)
-    poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "tst", "foot", pattern})
+    poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "tst", "foot": pattern})
 
 try:
     fish.button.when_pressed = send_test_record
     while True:
+        if poster.netActive:
+            fish.yellow.on()
+        else:
+            fish.yellow.off()
         if poster.netTrouble:
-            fish.leds[0].off()
-            fish.leds[2].on()
-        else
-            fish.leds[0].on()
-            fish.leds[2].off()
-        sleep(.5)
+            fish.red.on()
+            fish.green.off()
+        else:
+            fish.red.off()
+            fish.green.on()
+        time.sleep(.5)
 except Exception as e:
     fish.close()
     raise e

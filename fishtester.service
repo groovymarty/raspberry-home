@@ -1,0 +1,11 @@
+[Unit]
+Description=Run fishtester
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/raspberry-home
+ExecStart=/home/pi/raspberry-home/fishtester.sh
+
+[Install]
+WantedBy=multi-user.target

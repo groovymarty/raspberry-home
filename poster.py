@@ -16,6 +16,8 @@ waitQ = deque()
 backlogPath = "backlog"
 # backend server URL
 postURL = "https://groovymarty.com/gvyhome/data"
+# network request in progress?
+netActive = False;
 # network trouble?
 netTrouble = False
 # my source name for network trouble reports
@@ -97,6 +99,7 @@ def posterMain():
             # uncomment the if clause for testing, forces 404 error unless 3 or more records are ready to post
             url = postURL   # if len(postRecs) > 2 else postURL + "xxx"
             status = 0
+            netActive = True
             try:
                 # note this is a synchronous call, so thread will block until post succeeds or fails
                 r = requests.post(url, json=postRecs)
@@ -105,6 +108,7 @@ def posterMain():
                 pass
             if status != 200:
                 # post failed
+                netActive = False
                 setNetTrouble(True)
                 print("post status code is {0}".format(status), flush=True)
                 # put records back on waiting list
@@ -115,6 +119,7 @@ def posterMain():
                 # try again in next loop, usually 5 seconds
             else:
                 # successful post
+                netActive = False
                 setNetTrouble(False)
                 #print("post successful", flush=True)
                 # update or delete backlog file
