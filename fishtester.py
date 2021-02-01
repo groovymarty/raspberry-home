@@ -21,7 +21,7 @@ def send_test_record():
     global pattern
     pattern += 1
     fish.buzzer.beep(.05,0,1)
-    poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "tst", "foot": pattern})
+    poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "tst", "foo": pattern})
 
 try:
     fish.button.when_pressed = send_test_record
