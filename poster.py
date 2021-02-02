@@ -42,7 +42,7 @@ def setNetActive(newVal):
 # update network trouble status
 # because of boot record we will always have some network activity at startup
 def setNetTrouble(newVal):
-    global netTrouble
+    global netTrouble, netTroubleInit
     sendTrouble = False
     if netTrouble != newVal:
         netTrouble = newVal
