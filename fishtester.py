@@ -16,12 +16,12 @@ poster.setNetSrc("fish.net");
 # post boot record
 poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "boot", "who": "fish"})
 
-pattern = 1
+foo = 0
 def send_test_record():
-    global pattern
-    pattern += 1
+    global foo
+    foo += 1
     fish.buzzer.beep(.05,0,1)
-    poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "tst", "foo": pattern})
+    poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "tst", "foo": foo})
 
 try:
     fish.button.when_pressed = send_test_record
