@@ -53,7 +53,7 @@ def setNetTrouble(newVal):
     if netTroubleInit > 0:
         netTroubleInit -= 1
         # possibly send trouble record after initial delay
-        if netTroubleInit == 0 and netTrouble
+        if netTroubleInit == 0 and netTrouble:
             sendTrouble = True
 
     if sendTrouble and myNetSrc:
