@@ -18,10 +18,10 @@ backlogPath = "backlog"
 postURL = "https://groovymarty.com/gvyhome/data"
 # network request in progress?
 netActive = False
-# network trouble?
-netTrouble = False
+# network trouble? true until proven false
+netTrouble = True
 # network trouble initial delay
-netTroubleInit = 5
+netTroubleInitDelay = 5
 # my source name for network trouble reports
 myNetSrc = ""
 
@@ -39,27 +39,29 @@ def setNetActive(newVal):
     global netActive
     netActive = newVal
 
+# send net trouble report
+def sendNetTrouble():
+    print("network trouble {0}".format("start" if netTrouble else "end"), flush=True)
+    if myNetSrc:
+        addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
+ 
 # update network trouble status
 # because of boot record we will always have some network activity at startup
 def setNetTrouble(newVal):
-    global netTrouble, netTroubleInit
-    sendTrouble = False
+    global netTrouble, netTroubleInitDelay
     if netTrouble != newVal:
         netTrouble = newVal
-        # send trouble record on status change except during initial delay
-        if netTroubleInit == 0:
-            sendTrouble = True
+        # send trouble record on status change
+        # report ok immediately, but wait till after delay to report trouble
+        if netTroubleInitDelay == 0 or not netTrouble:
+            sendNetTrouble()
+            netTroubleInitDelay = 0
     # count down initial delay
-    if netTroubleInit > 0:
-        netTroubleInit -= 1
-        # possibly send trouble record after initial delay
-        if netTroubleInit == 0 and netTrouble:
-            sendTrouble = True
-
-    if sendTrouble:
-        print("network trouble {0}".format("start" if netTrouble else "end"), flush=True)
-        if myNetSrc:
-            addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
+    if netTroubleInitDelay > 0:
+        netTroubleInitDelay -= 1
+        # send trouble record after initial delay
+        if netTroubleInitDelay == 0:
+            sendNetTrouble()
 
 # read backlog file
 def readBacklog():
