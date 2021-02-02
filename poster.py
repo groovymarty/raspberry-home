@@ -56,8 +56,10 @@ def setNetTrouble(newVal):
         if netTroubleInit == 0 and netTrouble:
             sendTrouble = True
 
-    if sendTrouble and myNetSrc:
-        addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
+    if sendTrouble:
+        print("network trouble {0}".format("start" if netTrouble else "end"), flush=True)
+        if myNetSrc:
+            addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
 
 # read backlog file
 def readBacklog():
@@ -135,7 +137,8 @@ def posterMain():
                 # post failed
                 setNetActive(False)
                 setNetTrouble(True)
-                print("post status code is {0}".format(status), flush=True)
+                if status != 0:
+                    print("post status code is {0}".format(status), flush=True)
                 # put records back on waiting list
                 # extend waitQ on right with records from newest to oldest
                 waitQ.extend(reversed(postRecs))
