@@ -20,6 +20,8 @@ postURL = "https://groovymarty.com/gvyhome/data"
 netActive = False
 # network trouble?
 netTrouble = False
+# network trouble initial delay
+netTroubleInit = 5
 # my source name for network trouble reports
 myNetSrc = ""
 
@@ -38,12 +40,24 @@ def setNetActive(newVal):
     netActive = newVal
 
 # update network trouble status
+# because of boot record we will always have some network activity at startup
 def setNetTrouble(newVal):
     global netTrouble
+    sendTrouble = False
     if netTrouble != newVal:
         netTrouble = newVal
-        if myNetSrc:
-            addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
+        # send trouble record on status change except during initial delay
+        if netTroubleInit == 0:
+            sendTrouble = True
+    # count down initial delay
+    if netTroubleInit > 0:
+        netTroubleInit -= 1
+        # possibly send trouble record after initial delay
+        if netTroubleInit == 0 and netTrouble
+            sendTrouble = True
+
+    if sendTrouble and myNetSrc:
+        addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
 
 # read backlog file
 def readBacklog():
@@ -124,7 +138,7 @@ def posterMain():
                 print("post status code is {0}".format(status), flush=True)
                 # put records back on waiting list
                 # extend waitQ on right with records from newest to oldest
-                waitQ.extend(postRecs.reverse())
+                waitQ.extend(reversed(postRecs))
                 # write all waiting records to backlog file
                 # this ensures records will not be lost if reboot happens before next successful post
                 # avoid writing file if contents unchanged
