@@ -17,7 +17,7 @@ backlogPath = "backlog"
 # backend server URL
 postURL = "https://groovymarty.com/gvyhome/data"
 # network request in progress?
-netActive = False;
+netActive = False
 # network trouble?
 netTrouble = False
 # my source name for network trouble reports
@@ -31,6 +31,11 @@ def addRecord(rec):
 def setNetSrc(src):
     global myNetSrc
     myNetSrc = src
+
+# update network active status
+def setNetActive(newVal):
+    global netActive
+    netActive = newVal
 
 # update network trouble status
 def setNetTrouble(newVal):
@@ -74,12 +79,15 @@ def posterMain():
     # load wait list from backlog file
     # these are records we were unable to post during previous execution
     readBacklog()
+    backlogChanged = False
     while True:
         # transfer new records from input queue to wait list
+        # input queue and wait list are always newest (left) to oldest (right)
         try:
             # block up to 5 seconds for first record
             rec = inQ.get(timeout=5)
             waitQ.appendleft(rec)
+            backlogChanged = True
             # get additional input records without blocking
             while not inQ.empty():
                 rec = inQ.get_nowait()
@@ -90,36 +98,43 @@ def posterMain():
         # any records to post?
         if waitQ:
             # post up to 100 records at a time
+            # postRecs is oldest (left) to newest (right)
             postRecs = []
             while waitQ and len(postRecs) < 100:
+                # remove oldest record from waitQ (pop from right)
                 rec = waitQ.pop()
+                # append to right, so postRecs will be chronological order (oldest to newest)
                 postRecs.append(rec)
 
             # post to server
             # uncomment the if clause for testing, forces 404 error unless 3 or more records are ready to post
             url = postURL   # if len(postRecs) > 2 else postURL + "xxx"
             status = 0
-            netActive = True
             try:
                 # note this is a synchronous call, so thread will block until post succeeds or fails
+                setNetActive(True)
                 r = requests.post(url, json=postRecs)
                 status = r.status_code
             except Exception:
                 pass
             if status != 200:
                 # post failed
-                netActive = False
+                setNetActive(False)
                 setNetTrouble(True)
                 print("post status code is {0}".format(status), flush=True)
                 # put records back on waiting list
-                waitQ.extend(postRecs)
+                # extend waitQ on right with records from newest to oldest
+                waitQ.extend(postRecs.reverse())
                 # write all waiting records to backlog file
                 # this ensures records will not be lost if reboot happens before next successful post
-                writeBacklog()
+                # avoid writing file if contents unchanged
+                if (backlogChanged):
+                    writeBacklog()
+                    backlogChanged = False
                 # try again in next loop, usually 5 seconds
             else:
                 # successful post
-                netActive = False
+                setNetActive(False)
                 setNetTrouble(False)
                 #print("post successful", flush=True)
                 # update or delete backlog file
@@ -127,6 +142,7 @@ def posterMain():
                     writeBacklog()
                 else:
                     deleteBacklog()
+                backlogChanged = False
 
 # start poster thread
 thread = threading.Thread(name="poster", target=posterMain)
