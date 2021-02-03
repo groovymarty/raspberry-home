@@ -41,7 +41,7 @@ def setNetActive(newVal):
 
 # send net trouble report
 def sendNetTrouble():
-    print("network trouble {0}".format("start" if netTrouble else "end"), flush=True)
+    print("{0} network trouble".format("start" if netTrouble else "no"), flush=True)
     if myNetSrc:
         addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
  
