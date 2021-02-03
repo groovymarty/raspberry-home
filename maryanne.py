@@ -68,9 +68,9 @@ def printCounts():
 # main loop
 print("Hello from MaryAnne", flush=True)
 # set source name for network trouble reports
-poster.setNetSrc("ma1.net");
+poster.setNetSrc("ma1.net")
 # post boot record
-poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "boot", "who": "ma1"})
+poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
 while True:
     time.sleep(0.02)

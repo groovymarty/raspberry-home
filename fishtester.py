@@ -12,9 +12,9 @@ fish = FishDish()
 # main loop
 print("Hello from fishtester", flush=True)
 # set source name for network trouble reports
-poster.setNetSrc("fish.net");
+poster.setNetSrc("fish.net")
 # post boot record
-poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "boot", "who": "fish"})
+poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "fish.boot"})
 
 foo = 0
 def send_test_record():
