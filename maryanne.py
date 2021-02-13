@@ -97,7 +97,7 @@ while True:
                 filt[i] = 0
                 change = True
                 duration = now - ontime[i]
-                print("{0}: {1} is OFF, duration = {2}".format(str(now), names[i], str(duration)),
+                print("{0}: {1} is OFF, duration = {2}".format(thyme.toStr(now), names[i], str(duration)),
                       flush=True)
         else:
             # filtered state is off, looking for on
@@ -105,7 +105,7 @@ while True:
             if oncount[i] > 10:
                 filt[i] = 1 << i
                 change = True
-                print("{0}: {1} is ON".format(str(now), names[i]),
+                print("{0}: {1} is ON".format(thyme.toStr(now), names[i]),
                       flush=True)
                 ontime[i] = now
     if change:
