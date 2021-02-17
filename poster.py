@@ -22,6 +22,8 @@ netActive = False
 netTrouble = True
 # network trouble initial delay
 netTroubleInitDelay = 5
+# poster thread life count
+posterLife = 0
 # my source name for network trouble reports
 myNetSrc = ""
 
@@ -43,7 +45,11 @@ def setNetActive(newVal):
 def sendNetTrouble():
     print("{0} network trouble".format("start" if netTrouble else "no"), flush=True)
     if myNetSrc:
-        addRecord({"t": thyme.toStr(thyme.now()), "src": myNetSrc, "trouble": 1 if netTrouble else 0})
+        addRecord({
+            "t": thyme.toStr(thyme.now()),
+            "src": myNetSrc,
+            "trouble": 1 if netTrouble else 0,
+            "life": posterLife})
  
 # update network trouble status
 # because of boot record we will always have some network activity at startup
@@ -163,6 +169,17 @@ def posterMain():
                     deleteBacklog()
                 backlogChanged = False
 
+# wrapper function to catch exceptions
+def posterThread():
+    global posterLife
+    while True:
+        try:
+            posterLife += 1
+            posterMain()
+        except Exception as e:
+            print("poster restarting after exception {0}".format(str(e)))
+            setNetTrouble(True)
+
 # start poster thread
-thread = threading.Thread(name="poster", target=posterMain)
+thread = threading.Thread(name="poster", target=posterThread)
 thread.start()
