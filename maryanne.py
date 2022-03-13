@@ -11,6 +11,7 @@ import busio
 import digitalio
 import poster
 import thyme
+import RPi.GPIO as GPIO
 
 from adafruit_mcp230xx.mcp23017 import MCP23017
 
@@ -51,12 +52,23 @@ names = [
     "COOL 2ND",
     "WELL",
     "HW PUMP",
-    "PIN 10",
-    "PIN 11",
+    "PELLET",
+    "HUMSTAT",
     "PIN 12",
     "PIN 13",
     "PIN 14",
     "TEST"]
+
+# some port expander input pins
+heat1_inp = pins[names.index("HEAT 1ST")]
+pellet_inp = pins[names.index("PELLET")]
+humstat_inp = pins[names.index("HUMSTAT")]
+
+# GPIO output pins for solid state relays
+SSR_FAN = 4
+SSR_HUM_EN = 17
+GPIO.setup(SSR_FAN, GPIO.OUT)
+GPIO.setup(SSR_HUM_EN, GPIO.OUT)
 
 # for test/debug
 def printCounts():
@@ -72,8 +84,14 @@ poster.setNetSrc("ma1.net")
 # post boot record
 poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
+# loop timing
+SLEEP_SEC = 0.02
+HUM_DUTY_ON = 60.0 / SLEEP_SEC
+HUM_DUTY_OFF = 540.0 / SLEEP_SEC
+hum_duty_ctr = 0
+
 while True:
-    time.sleep(0.02)
+    time.sleep(SLEEP_SEC)
     now = thyme.now()
     # read inputs
     raw = list(map(lambda pin: pin.value, pins))
@@ -113,3 +131,17 @@ while True:
         inp = sum(filt)
         # post record with current data
         poster.addRecord({"t": thyme.toStr(now), "src": "ma1", "inp": inp})
+
+    # run fan when pellet stove is on or humidity is too low
+    want_fan = pellet_inp.value or humstat_inp.value
+    GPIO.output(SSR_FAN, GPIO.HIGH if want_fan else GPIO.LOW)
+
+    # cycle humidifier if we're running fan with no heat demand, to avoid wasting water
+    if want_fan and not heat1_inp.value:
+        GPIO.output(SSR_HUM_EN, GPIO.HIGH if hum_duty_ctr < HUM_DUTY_ON else GPIO.LOW)
+        hum_duty_ctr += 1
+        if hum_duty_ctr >= HUM_DUTY_ON + HUM_DUTY_OFF:
+            hum_duty_ctr = 0
+    else:
+        GPIO.output(SSR_HUM_EN, GPIO.HIGH)
+        hum_duty_ctr = 0
