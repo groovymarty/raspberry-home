@@ -65,10 +65,22 @@ pellet_inp = pins[names.index("PELLET")]
 humstat_inp = pins[names.index("HUMSTAT")]
 
 # GPIO output pins for solid state relays
-SSR_FAN = 4
-SSR_HUM_EN = 17
-GPIO.setup(SSR_FAN, GPIO.OUT)
-GPIO.setup(SSR_HUM_EN, GPIO.OUT)
+SSR1 = 4
+SSR2 = 17
+SSR3 = 18
+SSR4 = 27
+SSR5 = 22
+SSR6 = 23
+SSR7 = 24
+SSR8 = 25
+
+SSR_FAN = SSR1
+SSR_HUM_EN = SSR2
+
+ssrs = [SSR1, SSR2, SSR3, SSR4, SSR5, SSR6, SSR7, SSR8]
+for ssr in ssrs:
+    GPIO.setup(ssr, GPIO.OUT)
+    GPIO.output(ssr, GPIO.LOW)
 
 # for test/debug
 def printCounts():
