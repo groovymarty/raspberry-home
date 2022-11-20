@@ -61,6 +61,7 @@ names = [
 
 # some port expander input pins
 HEAT_1ST = names.index("HEAT 1ST")
+HEAT_MBR = names.index("HEAD_MBR")
 PEL_ON = names.index("PEL ON")
 HSTAT_BR = names.index("HSTAT BR")
 HSTAT_LR = names.index("HSTAT LR")
@@ -110,8 +111,8 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
 # loop timing
 SLEEP_SEC = 0.02
-HUM_DUTY_ON = 10.0
-HUM_DUTY_OFF = 50.0
+HUM_DUTY_ON = 5.0
+HUM_DUTY_OFF = 55.0
 hum_duty_tstart = 0
 
 while True:
@@ -162,16 +163,36 @@ while True:
     # regulate pellet stove according to LR thermostat
     GPIO.output(SSR_PEL_HI, GPIO.HIGH if filt[HEAT_1ST] else GPIO.LOW)
 
-    # run LR fan when pellet stove is on or humidity is too low
-    want_fan = filt[PEL_ON] or (filt[HSTAT_LR] and filt[OPTION])
-    GPIO.output(SSR_FAN_LR, GPIO.HIGH if want_fan else GPIO.LOW)
+    # optionally OR the humdistats
+    if filt[OPTION]:
+        hstat_lr = filt[HSTAT_LR] or filt[HSTAT_BR]
+        hstat_br = hstat_lr
+    else:
+        hstat_lr = filt[HSTAT_LR]
+        hstat_br = filt[HSTAT_BR]
+
+    # run LR fan when pellet stove is on or LR humidity is too low
+    want_fan_lr = filt[PEL_ON] or hstat_lr
+    GPIO.output(SSR_FAN_LR, GPIO.HIGH if want_fan_lr else GPIO.LOW)
+
+    # humidifier duty cycle timer
+    elapsed = (now - hum_duty_tstart).total_seconds()
+    if elapsed >= HUM_DUTY_ON + HUM_DUTY_OFF:
+        hum_duty_tstart = now
+        elapsed = 0
 
     # cycle humidifier if we're running fan with no heat demand, to avoid wasting water
-    if want_fan and not filt[HEAT_1ST]:
-        elapsed = (now - hum_duty_tstart).total_seconds()
+    if want_fan_lr and not filt[HEAT_1ST]:
         GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed < HUM_DUTY_ON else GPIO.LOW)
-        if elapsed >= HUM_DUTY_ON + HUM_DUTY_OFF:
-            hum_duty_tstart = now
     else:
         GPIO.output(SSR_HUM_LR, GPIO.HIGH)
-        hum_duty_tstart = now
+
+    # run BR fan when BR humidity is too low
+    want_fan_br = hstat_br
+    GPIO.output(SSR_FAN_BR, GPIO.HIGH if want_fan_br else GPIO.LOW)
+
+    # cycle humdifier
+    if want_fan_br and not filt[HEAT_MBR]:
+        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed < HUM_DUTY_ON else GPIO.LOW)
+    else:
+        GPIO.output(SSR_HUM_BR, GPIO.HIGH)
