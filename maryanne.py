@@ -60,10 +60,11 @@ names = [
     "TEST"]
 
 # some port expander input pins
-heat1_inp = pins[names.index("HEAT 1ST")]
-pel_on_inp = pins[names.index("PEL ON")]
-hstat_br_inp = pins[names.index("HSTAT BR")]
-hstat_lr_inp = pins[names.index("HSTAT LR")]
+HEAT_1ST = names.index("HEAT 1ST")
+PEL_ON = names.index("PEL ON")
+HSTAT_BR = names.index("HSTAT BR")
+HSTAT_LR = names.index("HSTAT LR")
+OPTION = names.index("OPTION")
 
 # GPIO output pins for solid state relays
 SSR1 = 4
@@ -109,9 +110,9 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
 # loop timing
 SLEEP_SEC = 0.02
-HUM_DUTY_ON = 10.0 / SLEEP_SEC
-HUM_DUTY_OFF = 50.0 / SLEEP_SEC
-hum_duty_timer = 0
+HUM_DUTY_ON = 10.0
+HUM_DUTY_OFF = 50.0
+hum_duty_tstart = 0
 
 while True:
     time.sleep(SLEEP_SEC)
@@ -156,21 +157,21 @@ while True:
         poster.addRecord({"t": thyme.toStr(now), "src": "ma1", "inp": inp})
 
     # turn off oil heat to LR when pellet stove is on
-    GPIO.output(SSR_HEAT_LR, GPIO.LOW if pel_on_inp.value else GPIO.HIGH)
+    GPIO.output(SSR_HEAT_LR, GPIO.LOW if filt[PEL_ON] else GPIO.HIGH)
 
     # regulate pellet stove according to LR thermostat
-    GPIO.output(SSR_PEL_HI, GPIO.HIGH if heat1_inp.value else GPIO.LOW)
+    GPIO.output(SSR_PEL_HI, GPIO.HIGH if filt[HEAT_1ST] else GPIO.LOW)
 
     # run LR fan when pellet stove is on or humidity is too low
-    want_fan = pel_on_inp.value or hstat_lr_inp.value
+    want_fan = filt[PEL_ON] or (filt[HSTAT_LR] and filt[OPTION])
     GPIO.output(SSR_FAN_LR, GPIO.HIGH if want_fan else GPIO.LOW)
 
     # cycle humidifier if we're running fan with no heat demand, to avoid wasting water
-    if want_fan and not heat1_inp.value:
-        GPIO.output(SSR_HUM_LR, GPIO.HIGH if hum_duty_timer < HUM_DUTY_ON else GPIO.LOW)
-        hum_duty_timer += SLEEP_SEC
-        if hum_duty_timer >= HUM_DUTY_ON + HUM_DUTY_OFF:
-            hum_duty_timer = 0
+    if want_fan and not filt[HEAT_1ST]:
+        elapsed = (now - hum_duty_tstart).total_seconds()
+        GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed < HUM_DUTY_ON else GPIO.LOW)
+        if elapsed >= HUM_DUTY_ON + HUM_DUTY_OFF:
+            hum_duty_tstart = now
     else:
         GPIO.output(SSR_HUM_LR, GPIO.HIGH)
-        hum_duty_timer = 0
+        hum_duty_tstart = now
