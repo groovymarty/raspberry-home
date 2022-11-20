@@ -61,7 +61,7 @@ names = [
 
 # some port expander input pins
 HEAT_1ST = names.index("HEAT 1ST")
-HEAT_MBR = names.index("HEAD_MBR")
+HEAT_MBR = names.index("HEAT MBR")
 PEL_ON = names.index("PEL ON")
 HSTAT_BR = names.index("HSTAT BR")
 HSTAT_LR = names.index("HSTAT LR")
@@ -113,7 +113,7 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 SLEEP_SEC = 0.02
 HUM_DUTY_ON = 5.0
 HUM_DUTY_OFF = 55.0
-hum_duty_tstart = 0
+hum_duty_tstart = thyme.now()
 
 while True:
     time.sleep(SLEEP_SEC)
@@ -182,7 +182,7 @@ while True:
         elapsed = 0
 
     # cycle humidifier if we're running fan with no heat demand, to avoid wasting water
-    if want_fan_lr and not filt[HEAT_1ST]:
+    if want_fan_lr and (not filt[HEAT_1ST] or filt[PEL_ON]):
         GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed < HUM_DUTY_ON else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_LR, GPIO.HIGH)
