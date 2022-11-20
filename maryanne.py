@@ -52,17 +52,18 @@ names = [
     "COOL 2ND",
     "WELL",
     "HW PUMP",
-    "PELLET",
-    "HUMSTAT",
-    "PIN 12",
-    "PIN 13",
+    "HSTAT BR",
+    "HSTAT LR",
+    "PEL ON",
+    "OPTION",
     "PIN 14",
     "TEST"]
 
 # some port expander input pins
 heat1_inp = pins[names.index("HEAT 1ST")]
-pellet_inp = pins[names.index("PELLET")]
-humstat_inp = pins[names.index("HUMSTAT")]
+pel_on_inp = pins[names.index("PEL ON")]
+hstat_br_inp = pins[names.index("HSTAT BR")]
+hstat_lr_inp = pins[names.index("HSTAT LR")]
 
 # GPIO output pins for solid state relays
 SSR1 = 4
@@ -74,13 +75,23 @@ SSR6 = 23
 SSR7 = 24
 SSR8 = 25
 
-SSR_FAN = SSR1
-SSR_HUM_EN = SSR2
-
 ssrs = [SSR1, SSR2, SSR3, SSR4, SSR5, SSR6, SSR7, SSR8]
+
+# SSR function assignments
+SSR_FAN_BR = SSR1
+SSR_HUM_BR = SSR2
+SSR_FAN_LR = SSR3
+SSR_HUM_LR = SSR4
+SSR_PEL_HI = SSR5
+SSR_HEAT_LR = SSR6
+
+# Initialize outputs
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
 for ssr in ssrs:
     GPIO.setup(ssr, GPIO.OUT)
-    GPIO.output(ssr, GPIO.LOW)
+    GPIO.output(ssr, GPIO.HIGH if ssr in [SSR_HUM_BR, SSR_HUM_LR, SSR_HEAT_LR] else GPIO.LOW)
 
 # for test/debug
 def printCounts():
@@ -98,9 +109,9 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
 # loop timing
 SLEEP_SEC = 0.02
-HUM_DUTY_ON = 60.0 / SLEEP_SEC
-HUM_DUTY_OFF = 540.0 / SLEEP_SEC
-hum_duty_ctr = 0
+HUM_DUTY_ON = 10.0 / SLEEP_SEC
+HUM_DUTY_OFF = 50.0 / SLEEP_SEC
+hum_duty_timer = 0
 
 while True:
     time.sleep(SLEEP_SEC)
@@ -144,16 +155,22 @@ while True:
         # post record with current data
         poster.addRecord({"t": thyme.toStr(now), "src": "ma1", "inp": inp})
 
-    # run fan when pellet stove is on or humidity is too low
-    want_fan = pellet_inp.value or humstat_inp.value
-    GPIO.output(SSR_FAN, GPIO.HIGH if want_fan else GPIO.LOW)
+    # turn off oil heat to LR when pellet stove is on
+    GPIO.output(SSR_HEAT_LR, GPIO.LOW if pel_on_inp.value else GPIO.HIGH)
+
+    # regulate pellet stove according to LR thermostat
+    GPIO.output(SSR_PEL_HI, GPIO.HIGH if heat1_inp.value else GPIO.LOW)
+
+    # run LR fan when pellet stove is on or humidity is too low
+    want_fan = pel_on_inp.value or hstat_lr_inp.value
+    GPIO.output(SSR_FAN_LR, GPIO.HIGH if want_fan else GPIO.LOW)
 
     # cycle humidifier if we're running fan with no heat demand, to avoid wasting water
     if want_fan and not heat1_inp.value:
-        GPIO.output(SSR_HUM_EN, GPIO.HIGH if hum_duty_ctr < HUM_DUTY_ON else GPIO.LOW)
-        hum_duty_ctr += 1
-        if hum_duty_ctr >= HUM_DUTY_ON + HUM_DUTY_OFF:
-            hum_duty_ctr = 0
+        GPIO.output(SSR_HUM_LR, GPIO.HIGH if hum_duty_timer < HUM_DUTY_ON else GPIO.LOW)
+        hum_duty_timer += SLEEP_SEC
+        if hum_duty_timer >= HUM_DUTY_ON + HUM_DUTY_OFF:
+            hum_duty_timer = 0
     else:
-        GPIO.output(SSR_HUM_EN, GPIO.HIGH)
-        hum_duty_ctr = 0
+        GPIO.output(SSR_HUM_LR, GPIO.HIGH)
+        hum_duty_timer = 0
