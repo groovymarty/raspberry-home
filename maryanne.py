@@ -163,8 +163,8 @@ while True:
     # regulate pellet stove according to LR thermostat
     GPIO.output(SSR_PEL_HI, GPIO.HIGH if filt[HEAT_1ST] else GPIO.LOW)
     
-    # run humidifiers cold?
-    run_cold_lr = filt[OPTION] and filt[HSTAT_LR] and (not filt[HEAT_1ST] or filt[PEL_ON])
+    # run humidifiers with cold air?
+    run_cold_lr = filt[PEL_ON] or (filt[OPTION] and filt[HSTAT_LR] and not filt[HEAT_1ST])
     run_cold_br = filt[OPTION] and filt[HSTAT_BR] and not filt[HEAT_MBR]
 
     # run LR fan when pellet stove is on or running humidifier cold
