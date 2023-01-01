@@ -111,8 +111,9 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
 # loop timing
 SLEEP_SEC = 0.02
-HUM_DUTY_ON = 10.0
-HUM_DUTY_OFF = 50.0
+HUM_DUTY_ON_BR = 10.0  # adjust per water flow rate
+HUM_DUTY_ON_LR = 6.6  # adjust per water flow rate
+HUM_DUTY_PERIOD = 60.0
 hum_duty_tstart = thyme.now()
 
 while True:
@@ -180,17 +181,17 @@ while True:
 
     # humidifier duty cycle timer
     elapsed = (now - hum_duty_tstart).total_seconds()
-    if elapsed >= HUM_DUTY_ON + HUM_DUTY_OFF:
+    if elapsed >= HUM_DUTY_PERIOD:
         hum_duty_tstart = now
         elapsed = 0
 
     # cycle humidifier if we're running cold, to avoid wasting water
     if run_cold_lr:
-        GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed < HUM_DUTY_ON else GPIO.LOW)
+        GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed < HUM_DUTY_ON_LR else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_LR, GPIO.HIGH)
 
     if run_cold_br:
-        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed < HUM_DUTY_ON else GPIO.LOW)
+        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed < HUM_DUTY_ON_BR else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_BR, GPIO.HIGH)
