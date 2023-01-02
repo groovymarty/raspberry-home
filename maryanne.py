@@ -111,9 +111,9 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 
 # loop timing
 SLEEP_SEC = 0.02
-HUM_DUTY_ON_BR = 5.0  # adjust per water flow rate
-HUM_DUTY_ON_LR = 4.0  # adjust per water flow rate
-HUM_DUTY_PERIOD = 30.0
+HUM_DUTY_ON_BR = 12.0  # adjust per water flow rate
+HUM_DUTY_ON_LR = 8.0  # adjust per water flow rate
+HUM_DUTY_PERIOD = 60.0
 hum_duty_tstart = thyme.now()
 
 while True:
