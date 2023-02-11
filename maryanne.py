@@ -200,6 +200,6 @@ while True:
     # LR humidifier always runs cold and has a reservoir and pump to recirculate water
     # cycle the water valve often enough to keep the reservioir full
     if run_cold_lr:
-        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed_br < HUM_DUTY_ON_BR else GPIO.LOW)
+        GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed_lr < HUM_DUTY_ON_LR else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_LR, GPIO.LOW)
