@@ -112,9 +112,10 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 # loop timing
 SLEEP_SEC = 0.02
 HUM_DUTY_ON_BR = 17.0  # adjust per water flow rate
-HUM_DUTY_ON_LR = 20.0  # adjust per water flow rate
-HUM_DUTY_PERIOD = 60.0
-hum_duty_tstart = thyme.now()
+HUM_DUTY_ON_LR = 120.0  # adjust per water flow rate
+HUM_DUTY_PERIOD_BR = 60.0  # one minute
+HUM_DUTY_PERIOD_LR = 3600.0  # one hour
+hum_duty_tstart_br = hum_duty_tstart_lr = thyme.now()
 
 while True:
     time.sleep(SLEEP_SEC)
@@ -168,7 +169,7 @@ while True:
     # true if HUMAX option switch is on, humidistat says air is dry,
     # and oil heat is not running
     # when pellet stove is on, always run LR humidifier in HUMAX mode
-    run_cold_lr = (filt[HUMAX] and filt[HSTAT_LR] and not filt[HEAT_1ST]) or filt[PEL_ON]
+    run_cold_lr = (filt[HUMAX] and filt[HSTAT_LR]) or filt[PEL_ON]
     run_cold_br = filt[HUMAX] and filt[HSTAT_BR] and not filt[HEAT_MBR]
 
     # run LR fan when pellet stove is on or running humidifier cold
@@ -179,19 +180,26 @@ while True:
     want_fan_br = run_cold_br
     GPIO.output(SSR_FAN_BR, GPIO.HIGH if want_fan_br else GPIO.LOW)
 
-    # humidifier duty cycle timer
-    elapsed = (now - hum_duty_tstart).total_seconds()
-    if elapsed >= HUM_DUTY_PERIOD:
-        hum_duty_tstart = now
-        elapsed = 0
+    # humidifier duty cycle timers
+    elapsed_br = (now - hum_duty_tstart_br).total_seconds()
+    if elapsed_br >= HUM_DUTY_PERIOD_BR:
+        hum_duty_tstart_br = now
+        elapsed_br = 0
 
-    # cycle humidifier if we're running cold, to avoid wasting water
-    if run_cold_lr:
-        GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed < HUM_DUTY_ON_LR else GPIO.LOW)
-    else:
-        GPIO.output(SSR_HUM_LR, GPIO.HIGH)
+    elapsed_lr = (now - hum_duty_tstart_lr).total_seconds()
+    if elapsed_lr >= HUM_DUTY_PERIOD_LR:
+        hum_duty_tstart_lr = now
+        elapsed_lr = 0
 
+    # cycle bedroom humidifier if we're running cold, to avoid wasting water
     if run_cold_br:
-        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed < HUM_DUTY_ON_BR else GPIO.LOW)
+        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed_br < HUM_DUTY_ON_BR else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_BR, GPIO.HIGH)
+
+    # LR humidifier always runs cold and has a reservoir and pump to recirculate water
+    # cycle the water valve often enough to keep the reservioir full
+    if run_cold_lr:
+        GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed_br < HUM_DUTY_ON_BR else GPIO.LOW)
+    else:
+        GPIO.output(SSR_HUM_LR, GPIO.LOW)
