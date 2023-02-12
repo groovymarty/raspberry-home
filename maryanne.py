@@ -165,12 +165,14 @@ while True:
     # regulate pellet stove according to LR thermostat
     GPIO.output(SSR_PEL_HI, GPIO.HIGH if filt[HEAT_1ST] else GPIO.LOW)
     
-    # run humidifiers with cold air (HUMAX)?
-    # true if HUMAX option switch is on, humidistat says air is dry,
-    # and oil heat is not running
-    # when pellet stove is on, always run LR humidifier in HUMAX mode
-    run_cold_lr = (filt[HUMAX] and filt[HSTAT_LR]) or filt[PEL_ON]
-    run_cold_br = filt[HUMAX] and filt[HSTAT_BR] and not filt[HEAT_MBR]
+    # run humidifiers with cold air?
+    # LR always runs cold because bypass duct has been disconnected
+    # LR humidifier runs on hstat demand and heat is on (oil or pellet)
+    # HSTAT switch forces continuous LR run when hstat demand is true
+    # Run BR cold when pellet stove is on (during the day) and hstat demand is true
+    # When MBR heat is on, BR humidifier runs with warm air (thus not cold)
+    run_cold_lr = (filt[HEAT_1ST] or filt[PEL_ON] or filt[HUMAX]) and filt[HSTAT_LR]
+    run_cold_br = filt[PEL_ON] and filt[HSTAT_BR] and not filt[HEAT_MBR]
 
     # run LR fan when pellet stove is on or running humidifier cold
     want_fan_lr = filt[PEL_ON] or run_cold_lr
@@ -192,14 +194,18 @@ while True:
         elapsed_lr = 0
 
     # cycle bedroom humidifier if we're running cold, to avoid wasting water
+    # otherwise leave HUM output high to allow normal operation (warm air)
     if run_cold_br:
         GPIO.output(SSR_HUM_BR, GPIO.HIGH if elapsed_br < HUM_DUTY_ON_BR else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_BR, GPIO.HIGH)
+        hum_duty_tstart_br = now
 
     # LR humidifier always runs cold and has a reservoir and pump to recirculate water
     # cycle the water valve often enough to keep the reservioir full
+    # otherwise leave water valve off
     if run_cold_lr:
         GPIO.output(SSR_HUM_LR, GPIO.HIGH if elapsed_lr < HUM_DUTY_ON_LR else GPIO.LOW)
     else:
         GPIO.output(SSR_HUM_LR, GPIO.LOW)
+        hum_duty_tstart_lr = now
