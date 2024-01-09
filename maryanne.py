@@ -112,7 +112,7 @@ poster.addRecord({"t": thyme.toStr(thyme.now()), "src": "ma1.boot"})
 # loop timing
 SLEEP_SEC = 0.02
 HUM_DUTY_ON_BR = 17.0  # adjust per water flow rate
-HUM_DUTY_ON_LR = 120.0  # adjust per water flow rate
+HUM_DUTY_ON_LR = 150.0  # adjust per water flow rate
 HUM_DUTY_PERIOD_BR = 60.0  # one minute
 HUM_DUTY_PERIOD_LR = 3600.0  # one hour
 hum_duty_tstart_br = hum_duty_tstart_lr = thyme.now()
@@ -168,11 +168,12 @@ while True:
     # run humidifiers with cold air?
     # LR always runs cold because bypass duct has been disconnected
     # LR humidifier runs on hstat demand and heat is on (oil or pellet)
-    # HSTAT switch forces continuous LR run when hstat demand is true
-    # Run BR cold when pellet stove is on (during the day) and hstat demand is true
-    # When MBR heat is on, BR humidifier runs with warm air (thus not cold)
+    # HUMAX switch forces continuous LR run when hstat demand is true
+    # HUMAX switch forces continuous BR run when hstat demand is true and MBR heat is not on
+    # When MBR heat is on, BR humidifier runs with warm air (thus not cold),
+    # so we don't want to cycle water.  Let water run continuously.
     run_cold_lr = (filt[HEAT_1ST] or filt[PEL_ON] or filt[HUMAX]) and filt[HSTAT_LR]
-    run_cold_br = filt[PEL_ON] and filt[HSTAT_BR] and not filt[HEAT_MBR]
+    run_cold_br = filt[HUMAX] and filt[HSTAT_BR] and not filt[HEAT_MBR]
 
     # run LR fan when pellet stove is on or running humidifier cold
     want_fan_lr = filt[PEL_ON] or run_cold_lr
